@@ -1,0 +1,147 @@
+export const BLOCK_TYPES = {
+  MOVE_UP: 'move_up',
+  MOVE_DOWN: 'move_down',
+  MOVE_LEFT: 'move_left',
+  MOVE_RIGHT: 'move_right',
+  REPEAT: 'repeat',
+  END_REPEAT: 'end_repeat',
+  IF_WALL: 'if_wall',
+  IF_PATH: 'if_path',
+  IF_STAR: 'if_star',
+  ELSE: 'else',
+  END_IF: 'end_if',
+};
+
+export const BLOCK_DEFS = {
+  [BLOCK_TYPES.MOVE_UP]: {
+    label: 'Up',
+    arrowIcon: '↑',
+    icon: '🐾',
+    color: '#5B6ABF',
+    arrowColor: '#FFFFFF',
+    category: 'movement',
+    description: 'Move one step up',
+    dirOffset: { row: -1, col: 0 },
+  },
+  [BLOCK_TYPES.MOVE_DOWN]: {
+    label: 'Down',
+    arrowIcon: '↓',
+    icon: '🐾',
+    color: '#5B6ABF',
+    arrowColor: '#FF69B4',
+    category: 'movement',
+    description: 'Move one step down',
+    dirOffset: { row: 1, col: 0 },
+  },
+  [BLOCK_TYPES.MOVE_LEFT]: {
+    label: 'Left',
+    arrowIcon: '←',
+    icon: '🐾',
+    color: '#5B6ABF',
+    arrowColor: '#4FC3F7',
+    category: 'movement',
+    description: 'Move one step left',
+    dirOffset: { row: 0, col: -1 },
+  },
+  [BLOCK_TYPES.MOVE_RIGHT]: {
+    label: 'Right',
+    arrowIcon: '→',
+    icon: '🐾',
+    color: '#5B6ABF',
+    arrowColor: '#FF9800',
+    category: 'movement',
+    description: 'Move one step right',
+    dirOffset: { row: 0, col: 1 },
+  },
+  [BLOCK_TYPES.REPEAT]: {
+    label: 'Repeat',
+    arrowIcon: '🔄',
+    icon: '🔄',
+    color: '#6BCB77',
+    category: 'loop',
+    hasParam: true,
+    paramLabel: 'times',
+    defaultParam: 2,
+    description: 'Repeat the blocks inside',
+  },
+  [BLOCK_TYPES.END_REPEAT]: {
+    label: 'End Repeat',
+    arrowIcon: '🔚',
+    icon: '🔚',
+    color: '#A0A0A0',
+    category: 'loop',
+    description: 'End of repeat block',
+  },
+  [BLOCK_TYPES.IF_WALL]: {
+    label: 'If Wall',
+    arrowIcon: '🧱',
+    icon: '🧱',
+    color: '#FF8C42',
+    category: 'condition',
+    description: 'Check if there is a wall',
+  },
+  [BLOCK_TYPES.IF_PATH]: {
+    label: 'If Path',
+    arrowIcon: '🛤️',
+    icon: '🛤️',
+    color: '#FF8C42',
+    category: 'condition',
+    description: 'Check if the path is clear',
+  },
+  [BLOCK_TYPES.IF_STAR]: {
+    label: 'If Star',
+    arrowIcon: '⭐',
+    icon: '⭐',
+    color: '#FF8C42',
+    category: 'condition',
+    description: 'Check if there is a star here',
+  },
+  [BLOCK_TYPES.ELSE]: {
+    label: 'Else',
+    arrowIcon: '🔀',
+    icon: '🔀',
+    color: '#A0A0A0',
+    category: 'condition',
+    description: 'Otherwise do this',
+  },
+  [BLOCK_TYPES.END_IF]: {
+    label: 'End If',
+    arrowIcon: '🔚',
+    icon: '🔚',
+    color: '#A0A0A0',
+    category: 'condition',
+    description: 'End of if block',
+  },
+};
+
+export const DIRECTIONS = {
+  UP: 0,
+  RIGHT: 1,
+  DOWN: 2,
+  LEFT: 3,
+};
+
+export const DIR_OFFSETS = {
+  [DIRECTIONS.UP]: { row: -1, col: 0 },
+  [DIRECTIONS.RIGHT]: { row: 0, col: 1 },
+  [DIRECTIONS.DOWN]: { row: 1, col: 0 },
+  [DIRECTIONS.LEFT]: { row: 0, col: -1 },
+};
+
+export const DIR_LABELS = {
+  [DIRECTIONS.UP]: '⬆️',
+  [DIRECTIONS.RIGHT]: '➡️',
+  [DIRECTIONS.DOWN]: '⬇️',
+  [DIRECTIONS.LEFT]: '⬅️',
+};
+
+export const CELL_TYPES = {
+  PATH: 0,
+  WALL: 1,
+  STAR: 2,
+  GEM: 3,
+  WATER: 4,
+  LAVA: 5,
+  GOAL: 6,
+  START: 7,
+};
