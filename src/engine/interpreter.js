@@ -1,5 +1,5 @@
 import { BLOCK_TYPES, BLOCK_DEFS, CELL_TYPES } from '../constants/blocks';
-import { isWalkable, isWallAhead, isPathAhead, cloneGrid } from './gridUtils';
+import { isWalkable, isWallAhead, isPathAhead, cloneGrid, isInBounds } from './gridUtils';
 
 const MAX_STEPS = 500;
 
@@ -14,6 +14,7 @@ export function executeBlocks(blocks, level) {
   let totalSteps = 0;
   let reachedGoal = false;
   let error = null;
+  let hitObstacle = null;
 
   steps.push({
     row, col, dir,
@@ -53,12 +54,26 @@ export function executeBlocks(blocks, level) {
       });
     } else {
       totalSteps++;
+      // Track what obstacle was hit
+      if (!hitObstacle && isInBounds(nr, nc, grid)) {
+        const cellType = grid[nr][nc];
+        if (cellType === CELL_TYPES.WALL) {
+          hitObstacle = 'tree';
+        } else if (cellType === CELL_TYPES.WATER) {
+          hitObstacle = 'water';
+        } else if (cellType === CELL_TYPES.LAVA) {
+          hitObstacle = 'lava';
+        }
+      } else if (!hitObstacle) {
+        hitObstacle = 'boundary';
+      }
       steps.push({
         row, col, dir,
         grid: cloneGrid(grid),
         starsCollected,
         gemsCollected,
         action: 'bump',
+        hitObstacle,
       });
     }
   }
@@ -74,7 +89,11 @@ export function executeBlocks(blocks, level) {
       const def = BLOCK_DEFS[block.type];
 
       if (def && def.dirOffset) {
-        tryMove(def.dirOffset.row, def.dirOffset.col, block.type);
+        const steps = block.param || 1;
+        for (let s = 0; s < steps; s++) {
+          tryMove(def.dirOffset.row, def.dirOffset.col, block.type);
+          if (error) return;
+        }
         continue;
       }
 
@@ -136,6 +155,7 @@ export function executeBlocks(blocks, level) {
     totalGems,
     totalSteps,
     error,
+    hitObstacle,
     perfect: reachedGoal && starsCollected === totalStars && gemsCollected === totalGems,
   };
 }

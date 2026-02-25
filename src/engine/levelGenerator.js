@@ -266,8 +266,7 @@ function generateWorld2Levels() {
 
 function generateWorld3Levels() {
   const levels = [];
-  const blocks = [BLOCK_TYPES.MOVE_UP, BLOCK_TYPES.MOVE_DOWN, BLOCK_TYPES.MOVE_LEFT, BLOCK_TYPES.MOVE_RIGHT,
-    BLOCK_TYPES.REPEAT, BLOCK_TYPES.END_REPEAT];
+  const blocks = [BLOCK_TYPES.MOVE_UP, BLOCK_TYPES.MOVE_DOWN, BLOCK_TYPES.MOVE_LEFT, BLOCK_TYPES.MOVE_RIGHT];
 
   const maps = [
     { title:'Loop Intro', grid:[[W,W,W,W,W,W,W,W],[W,ST,P,P,P,P,GL,W],[W,W,W,W,W,W,W,W]], sr:1,sc:1,sd:1,opt:2,hint:'Use Repeat to move 5 times!' },
@@ -306,13 +305,12 @@ function generateWorld3Levels() {
 function generateWorld4to8Levels() {
   const levels = [];
 
-  const loopBlocks = [BLOCK_TYPES.MOVE_UP, BLOCK_TYPES.MOVE_DOWN, BLOCK_TYPES.MOVE_LEFT, BLOCK_TYPES.MOVE_RIGHT,
-    BLOCK_TYPES.REPEAT, BLOCK_TYPES.END_REPEAT];
-  const ifBlocks = [...loopBlocks, BLOCK_TYPES.IF_WALL, BLOCK_TYPES.IF_PATH, BLOCK_TYPES.ELSE, BLOCK_TYPES.END_IF];
+  const moveBlocks = [BLOCK_TYPES.MOVE_UP, BLOCK_TYPES.MOVE_DOWN, BLOCK_TYPES.MOVE_LEFT, BLOCK_TYPES.MOVE_RIGHT];
+  const ifBlocks = [...moveBlocks, BLOCK_TYPES.IF_WALL, BLOCK_TYPES.IF_PATH, BLOCK_TYPES.ELSE, BLOCK_TYPES.END_IF];
   const allBlocks = [...ifBlocks, BLOCK_TYPES.IF_STAR];
 
   const worldConfigs = [
-    { id: 4, startLevel: 76, blocks: loopBlocks, name: 'Forest' },
+    { id: 4, startLevel: 76, blocks: moveBlocks, name: 'Forest' },
     { id: 5, startLevel: 101, blocks: ifBlocks, name: 'Mountains' },
     { id: 6, startLevel: 126, blocks: ifBlocks, name: 'Space' },
     { id: 7, startLevel: 151, blocks: allBlocks, name: 'Volcano' },

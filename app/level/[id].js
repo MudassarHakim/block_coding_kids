@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, { 
+  FadeIn, 
+  FadeOut, 
+  SlideInDown, 
+  SlideInRight,
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
 import { COLORS, SIZES, SHADOWS } from '../../src/constants/theme';
 import { BLOCK_DEFS } from '../../src/constants/blocks';
 import { generateAllLevels } from '../../src/engine/levelGenerator';
@@ -11,6 +22,8 @@ import Grid from '../../src/components/Grid';
 import BlockPalette from '../../src/components/BlockPalette';
 import BlockSequence from '../../src/components/BlockSequence';
 import LevelCompleteModal from '../../src/components/LevelCompleteModal';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const allLevels = generateAllLevels();
 
@@ -145,41 +158,53 @@ export default function LevelScreen() {
   const codeWidth = isWide ? SCREEN_W * 0.46 : SCREEN_W - 32;
 
   const renderTopBar = () => (
-    <View style={styles.topBar}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-        <Text style={styles.backText}>✕</Text>
+    <Animated.View entering={SlideInDown.duration(400).springify()} style={styles.topBar}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+        <Text style={styles.backText}>←</Text>
       </TouchableOpacity>
       <View style={styles.titleArea}>
-        <Text style={styles.levelLabel}>Level {level.id}</Text>
+        <View style={styles.levelBadge}>
+          <Text style={styles.levelLabel}>Level {level.id}</Text>
+        </View>
         <Text style={styles.levelTitle} numberOfLines={1}>{level.title}</Text>
       </View>
-      <TouchableOpacity onPress={() => setShowHint(!showHint)} style={styles.hintBtn}>
+      <TouchableOpacity onPress={() => setShowHint(!showHint)} style={[styles.hintBtn, showHint && styles.hintBtnActive]} activeOpacity={0.7}>
         <Text style={styles.hintIcon}>💡</Text>
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 
   const renderActionBar = () => (
-    <View style={styles.actionBar}>
+    <Animated.View entering={SlideInDown.delay(200).duration(400).springify()} style={styles.actionBar}>
       {isRunning ? (
-        <TouchableOpacity style={[styles.actionBtn, styles.stopBtn]} onPress={stopAndReset}>
-          <Text style={styles.actionText}>⏹ Stop</Text>
+        <TouchableOpacity style={[styles.actionBtn, styles.stopBtn]} onPress={stopAndReset} activeOpacity={0.8}>
+          <View style={styles.btnInner}>
+            <Text style={styles.btnIcon}>⏹</Text>
+            <Text style={styles.actionText}>Stop</Text>
+          </View>
         </TouchableOpacity>
       ) : (
         <>
-          <TouchableOpacity style={[styles.actionBtn, styles.clearBtn]} onPress={resetCode}>
-            <Text style={[styles.actionText, styles.clearText]}>🗑</Text>
+          <TouchableOpacity style={[styles.actionBtn, styles.clearBtn]} onPress={resetCode} activeOpacity={0.8}>
+            <Text style={styles.smallBtnIcon}>🗑️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, styles.resetBtn]} onPress={stopAndReset} activeOpacity={0.8}>
+            <Text style={styles.smallBtnIcon}>↺</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionBtn, styles.runBtn, blocks.length === 0 && styles.disabledBtn]}
             onPress={runCode}
             disabled={blocks.length === 0}
+            activeOpacity={0.8}
           >
-            <Text style={styles.actionText}>▶ Run</Text>
+            <View style={styles.btnInner}>
+              <Text style={styles.btnIcon}>▶</Text>
+              <Text style={styles.actionText}>Run Code</Text>
+            </View>
           </TouchableOpacity>
         </>
       )}
-    </View>
+    </Animated.View>
   );
 
   // --- WIDE / LANDSCAPE LAYOUT: Code left, Grid right ---
@@ -268,7 +293,10 @@ export default function LevelScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#E8F4E5' },
+  safe: { 
+    flex: 1, 
+    backgroundColor: '#E8F5E9',
+  },
   container: { flex: 1, paddingHorizontal: SIZES.padding },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 12 },
@@ -277,49 +305,83 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    gap: 10,
+    paddingVertical: 12,
+    gap: 12,
   },
   backBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 44, 
+    height: 44, 
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', 
+    alignItems: 'center',
     ...SHADOWS.card,
   },
-  backText: { fontSize: 18, fontWeight: '700', color: '#9CA3AF' },
+  backText: { fontSize: 22, fontWeight: '600', color: COLORS.textMedium },
   titleArea: { flex: 1 },
-  levelLabel: { fontSize: 11, fontWeight: '700', color: '#9CA3AF' },
-  levelTitle: { fontSize: 17, fontWeight: '800', color: COLORS.text },
+  levelBadge: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 2,
+  },
+  levelLabel: { 
+    fontSize: 11, 
+    fontWeight: '700', 
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+  levelTitle: { 
+    fontSize: 20, 
+    fontWeight: '800', 
+    color: COLORS.text,
+    letterSpacing: -0.3,
+  },
   hintBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: 44, 
+    height: 44, 
+    borderRadius: 14,
     backgroundColor: '#FFF9E6',
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', 
+    alignItems: 'center',
     ...SHADOWS.card,
   },
-  hintIcon: { fontSize: 18 },
-  hintBar: {
-    backgroundColor: '#FFF9E6',
-    borderRadius: SIZES.radiusSm,
-    padding: 10,
-    marginBottom: 6,
-    borderLeftWidth: 3,
-    borderLeftColor: '#FFD93D',
+  hintBtnActive: {
+    backgroundColor: '#FFE082',
+    transform: [{ scale: 1.05 }],
   },
-  hintText: { fontSize: 13, color: COLORS.text, fontWeight: '500' },
+  hintIcon: { fontSize: 22 },
+  hintBar: {
+    backgroundColor: '#FFFDE7',
+    borderRadius: SIZES.radiusSm,
+    padding: 14,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFB300',
+    ...SHADOWS.sm,
+  },
+  hintText: { 
+    fontSize: 14, 
+    color: COLORS.text, 
+    fontWeight: '600',
+    lineHeight: 20,
+  },
 
   // Wide layout
   wideBody: {
     flex: 1,
     flexDirection: 'row',
-    gap: 16,
+    gap: 20,
   },
   codePanel: {
     flex: 4,
-    minWidth: 260,
-    maxWidth: 380,
+    minWidth: 280,
+    maxWidth: 400,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 24,
+    padding: 16,
     ...SHADOWS.card,
   },
   gridScene: {
@@ -328,63 +390,101 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sceneFrame: {
-    backgroundColor: '#D4EBC8',
-    borderRadius: 16,
-    padding: 10,
-    borderWidth: 3,
-    borderColor: '#8BB57A',
-    ...SHADOWS.card,
+    backgroundColor: '#C8E6C9',
+    borderRadius: 24,
+    padding: 12,
+    borderWidth: 4,
+    borderColor: '#81C784',
+    ...SHADOWS.cardHover,
   },
   sceneLabelRow: {
-    marginTop: 10,
+    marginTop: 14,
     alignItems: 'center',
   },
   sceneLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#5B7A4A',
-    backgroundColor: '#F0F9E8',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
+    color: '#2E7D32',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 24,
     overflow: 'hidden',
+    ...SHADOWS.sm,
   },
 
   // Narrow layout
   gridWrapper: {
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 10,
   },
   sceneLabelSmall: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#5B7A4A',
-    marginTop: 6,
-    backgroundColor: '#F0F9E8',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    color: '#2E7D32',
+    marginTop: 10,
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 16,
     overflow: 'hidden',
+    ...SHADOWS.sm,
   },
   codeArea: { flex: 1 },
-  sequenceArea: { flex: 1, marginTop: 4 },
+  sequenceArea: { flex: 1, marginTop: 6 },
 
   actionBar: {
     flexDirection: 'row',
     gap: 10,
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingBottom: 16,
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 14,
+    paddingVertical: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    ...SHADOWS.button,
+    justifyContent: 'center',
   },
-  runBtn: { backgroundColor: '#6BCB77' },
-  stopBtn: { backgroundColor: '#FF4757' },
-  clearBtn: { backgroundColor: '#FFFFFF', flex: 0.35 },
-  disabledBtn: { opacity: 0.45 },
-  actionText: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
-  clearText: { color: '#9CA3AF' },
+  btnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  btnIcon: {
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  smallBtnIcon: {
+    fontSize: 20,
+  },
+  runBtn: { 
+    backgroundColor: COLORS.success,
+    ...SHADOWS.buttonSuccess,
+  },
+  stopBtn: { 
+    backgroundColor: COLORS.danger,
+    shadowColor: COLORS.danger,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  clearBtn: { 
+    backgroundColor: '#FFFFFF', 
+    flex: 0.25,
+    ...SHADOWS.card,
+  },
+  resetBtn: { 
+    backgroundColor: '#FFFFFF', 
+    flex: 0.25,
+    ...SHADOWS.card,
+  },
+  disabledBtn: { opacity: 0.5 },
+  actionText: { 
+    fontSize: 17, 
+    fontWeight: '800', 
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
 });
