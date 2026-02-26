@@ -1,40 +1,153 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import Animated, { 
+  FadeInDown, 
+  FadeInRight,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { BLOCK_DEFS } from '../constants/blocks';
-import { COLORS, SIZES, SHADOWS } from '../constants/theme';
+import { COLORS, SHADOWS } from '../constants/theme';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedView = Animated.View;
+
+const ARROW_ICONS = {
+  up: 'arrow-up',
+  down: 'arrow-down', 
+  left: 'arrow-back',
+  right: 'arrow-forward',
+};
+
+function AnimatedArrow({ direction, color }) {
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    const offset = 4;
+    const duration = 700;
+    
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      true
+    );
+
+    switch (direction) {
+      case 'up':
+        translateY.value = withRepeat(
+          withSequence(
+            withTiming(-offset, { duration, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        break;
+      case 'down':
+        translateY.value = withRepeat(
+          withSequence(
+            withTiming(offset, { duration, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        break;
+      case 'left':
+        translateX.value = withRepeat(
+          withSequence(
+            withTiming(-offset, { duration, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        break;
+      case 'right':
+        translateX.value = withRepeat(
+          withSequence(
+            withTiming(offset, { duration, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1,
+          true
+        );
+        break;
+    }
+  }, [direction]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  return (
+    <AnimatedView style={[styles.arrowBox, animatedStyle]}>
+      <Ionicons name={ARROW_ICONS[direction]} size={28} color={color} />
+    </AnimatedView>
+  );
+}
+
+function getDirection(type) {
+  if (type.includes('up')) return 'up';
+  if (type.includes('down')) return 'down';
+  if (type.includes('left')) return 'left';
+  if (type.includes('right')) return 'right';
+  return null;
+}
 
 export default function BlockPalette({ availableBlocks, onAddBlock, vertical }) {
+  const renderBlock = (type, index, isVertical) => {
+    const def = BLOCK_DEFS[type];
+    if (!def) return null;
+    const isMovement = def.category === 'movement';
+    const direction = getDirection(type);
+    
+    return (
+      <AnimatedTouchable
+        key={type}
+        entering={isVertical ? FadeInDown.delay(index * 50).springify() : FadeInRight.delay(index * 60).springify()}
+        style={[isVertical ? styles.vertBlock : styles.block, { backgroundColor: def.color }]}
+        onPress={() => onAddBlock(type)}
+        activeOpacity={0.8}
+      >
+        {isMovement && direction ? (
+          <>
+            <Text style={styles.pawIcon}>🐾</Text>
+            <AnimatedArrow direction={direction} color={def.arrowColor} />
+            <View style={styles.stepBadge}>
+              <Text style={styles.stepText}>1</Text>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.blockIcon}>{def.icon}</Text>
+            <Text style={isVertical ? styles.vertLabel : styles.label} numberOfLines={1}>{def.label}</Text>
+          </>
+        )}
+      </AnimatedTouchable>
+    );
+  };
+
   if (vertical) {
     return (
       <View style={styles.vertContainer}>
         <Text style={styles.title}>📦 Blocks</Text>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.vertScroll}>
-          {availableBlocks.map((type, index) => {
-            const def = BLOCK_DEFS[type];
-            if (!def) return null;
-            const isArrow = def.category === 'movement';
-            return (
-              <AnimatedTouchable
-                key={type}
-                entering={FadeInDown.delay(index * 50).springify()}
-                style={[styles.vertBlock, { backgroundColor: def.color }]}
-                onPress={() => onAddBlock(type)}
-                activeOpacity={0.8}
-              >
-                {isArrow && <Text style={styles.pawIcon}>🐾</Text>}
-                <View style={[styles.arrowBox, isArrow && styles.arrowBoxActive]}>
-                  <Text style={[styles.arrowText, isArrow && { color: def.arrowColor || '#FFF', fontSize: 22 }]}>
-                    {def.arrowIcon || def.icon}
-                  </Text>
-                </View>
-                {isArrow && <View style={styles.stepBadge}><Text style={styles.stepHint}>1</Text></View>}
-                {!isArrow && <Text style={styles.vertLabel} numberOfLines={1}>{def.label}</Text>}
-              </AnimatedTouchable>
-            );
-          })}
+          {availableBlocks.map((type, index) => renderBlock(type, index, true))}
         </ScrollView>
       </View>
     );
@@ -44,29 +157,7 @@ export default function BlockPalette({ availableBlocks, onAddBlock, vertical }) 
     <View style={styles.container}>
       <Text style={styles.title}>📦 Blocks</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {availableBlocks.map((type, index) => {
-          const def = BLOCK_DEFS[type];
-          if (!def) return null;
-          const isArrow = def.category === 'movement';
-          return (
-            <AnimatedTouchable
-              key={type}
-              entering={FadeInRight.delay(index * 60).springify()}
-              style={[styles.block, { backgroundColor: def.color }]}
-              onPress={() => onAddBlock(type)}
-              activeOpacity={0.8}
-            >
-              {isArrow && <Text style={styles.pawIcon}>🐾</Text>}
-              <View style={[styles.arrowBox, isArrow && styles.arrowBoxActive]}>
-                <Text style={[styles.arrowText, isArrow && { color: def.arrowColor || '#FFF', fontSize: 24 }]}>
-                  {def.arrowIcon || def.icon}
-                </Text>
-              </View>
-              {isArrow && <View style={styles.stepBadge}><Text style={styles.stepHint}>1</Text></View>}
-              {!isArrow && <Text style={styles.label} numberOfLines={1}>{def.label}</Text>}
-            </AnimatedTouchable>
-          );
-        })}
+        {availableBlocks.map((type, index) => renderBlock(type, index, false))}
       </ScrollView>
     </View>
   );
@@ -74,79 +165,89 @@ export default function BlockPalette({ availableBlocks, onAddBlock, vertical }) 
 
 const styles = StyleSheet.create({
   container: { paddingVertical: 8 },
-  vertContainer: { marginBottom: 10 },
+  vertContainer: { marginBottom: 12 },
   title: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: COLORS.textMedium,
-    marginBottom: 10,
+    marginBottom: 12,
     marginLeft: 4,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
-  scroll: { paddingHorizontal: 4, gap: 10 },
-  vertScroll: { gap: 8 },
+  scroll: { 
+    paddingHorizontal: 4, 
+    gap: 12,
+  },
+  vertScroll: { 
+    gap: 12,
+  },
   block: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    gap: 8,
-    minWidth: 80,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 12,
     ...SHADOWS.card,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
   vertBlock: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    gap: 8,
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 12,
     ...SHADOWS.card,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
   },
-  pawIcon: { fontSize: 18 },
+  pawIcon: {
+    fontSize: 16,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 8,
+    width: 28,
+    height: 28,
+    textAlign: 'center',
+    lineHeight: 28,
+    overflow: 'hidden',
+  },
   arrowBox: {
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  arrowBoxActive: {
-    backgroundColor: 'rgba(0,0,0,0.15)',
+  stepBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 10,
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  arrowText: {
+  stepText: {
     color: '#FFFFFF',
-    fontWeight: '900',
+    fontSize: 16,
+    fontWeight: '700',
+    includeFontPadding: false,
+  },
+  blockIcon: { 
     fontSize: 20,
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
   },
   label: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
+    includeFontPadding: false,
   },
   vertLabel: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     flex: 1,
-  },
-  stepBadge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  stepHint: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
+    includeFontPadding: false,
   },
 });

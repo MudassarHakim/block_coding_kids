@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../../src/constants/theme';
 import { WORLDS } from '../../src/constants/worlds';
 import { generateAllLevels } from '../../src/engine/levelGenerator';
@@ -70,7 +71,8 @@ export default function DailyQuestScreen() {
       <View style={styles.levelGridContainer}>
         <View style={styles.levelGridHeader}>
           <TouchableOpacity onPress={() => setSelectedWorld(null)} style={styles.backBtn}>
-            <Text style={styles.backText}>◀ Back</Text>
+            <Ionicons name="arrow-back" size={20} color={COLORS.primary} />
+            <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
           <Text style={styles.levelGridTitle}>
             {selectedWorld.icon} {selectedWorld.name}
@@ -247,7 +249,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 12,
   },
-  backBtn: { paddingVertical: 6, paddingRight: 8 },
+  backBtn: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: 6, 
+    paddingRight: 8,
+    gap: 4,
+  },
   backText: { fontSize: 16, fontWeight: '700', color: COLORS.primary },
   levelGridTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
   levelGrid: {

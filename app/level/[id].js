@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { 
@@ -7,12 +7,15 @@ import Animated, {
   FadeOut, 
   SlideInDown, 
   SlideInRight,
+  SlideOutUp,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   interpolateColor,
+  runOnJS,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, SHADOWS } from '../../src/constants/theme';
 import { BLOCK_DEFS } from '../../src/constants/blocks';
 import { generateAllLevels } from '../../src/engine/levelGenerator';
@@ -44,8 +47,14 @@ export default function LevelScreen() {
   const [showModal, setShowModal] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [finishedState, setFinishedState] = useState(null);
+  const [toast, setToast] = useState(null);
   const animRef = useRef(null);
   const stepsRef = useRef([]);
+
+  const showToast = useCallback((message, blockIndex) => {
+    setToast({ message, blockIndex });
+    setTimeout(() => setToast(null), 2500);
+  }, []);
 
   const currentState = useMemo(() => {
     if (isRunning && stepsRef.current[currentStep]) {
@@ -58,8 +67,33 @@ export default function LevelScreen() {
 
   const addBlock = useCallback((type) => {
     if (blocks.length >= 20) return;
+    
+    const def = BLOCK_DEFS[type];
+    const isMovement = def?.category === 'movement';
+    
+    if (isMovement && blocks.length > 0) {
+      const lastBlock = blocks[blocks.length - 1];
+      if (lastBlock.type === type) {
+        const currentSteps = lastBlock.param || 1;
+        if (currentSteps < 9) {
+          setBlocks(prev => {
+            const newBlocks = [...prev];
+            newBlocks[newBlocks.length - 1] = { 
+              ...newBlocks[newBlocks.length - 1], 
+              param: currentSteps + 1 
+            };
+            return newBlocks;
+          });
+          showToast(`Increased to ${currentSteps + 1} steps!`, blocks.length - 1);
+        } else {
+          showToast('Maximum 9 steps reached!', blocks.length - 1);
+        }
+        return;
+      }
+    }
+    
     setBlocks(prev => [...prev, { id: `block_${++blockIdCounter}`, type, param: BLOCK_DEFS[type]?.defaultParam }]);
-  }, [blocks.length]);
+  }, [blocks, showToast]);
 
   const removeBlock = useCallback((index) => {
     setBlocks(prev => prev.filter((_, i) => i !== index));
@@ -160,7 +194,7 @@ export default function LevelScreen() {
   const renderTopBar = () => (
     <Animated.View entering={SlideInDown.duration(400).springify()} style={styles.topBar}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
-        <Text style={styles.backText}>←</Text>
+        <Ionicons name="arrow-back" size={24} color={COLORS.textMedium} />
       </TouchableOpacity>
       <View style={styles.titleArea}>
         <View style={styles.levelBadge}>
@@ -247,6 +281,16 @@ export default function LevelScreen() {
             </View>
           </View>
         </View>
+        {toast && (
+          <Animated.View 
+            entering={SlideInDown.springify()} 
+            exiting={SlideOutUp.springify()}
+            style={styles.toast}
+          >
+            <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+            <Text style={styles.toastText}>{toast.message}</Text>
+          </Animated.View>
+        )}
         <LevelCompleteModal visible={showModal} result={result} onNext={handleNext} onRetry={() => { setShowModal(false); stopAndReset(); }} onClose={() => { setShowModal(false); router.back(); }} />
       </SafeAreaView>
     );
@@ -287,6 +331,16 @@ export default function LevelScreen() {
 
         {renderActionBar()}
       </View>
+      {toast && (
+        <Animated.View 
+          entering={SlideInDown.springify()} 
+          exiting={SlideOutUp.springify()}
+          style={styles.toast}
+        >
+          <Ionicons name="add-circle" size={20} color="#FFFFFF" />
+          <Text style={styles.toastText}>{toast.message}</Text>
+        </Animated.View>
+      )}
       <LevelCompleteModal visible={showModal} result={result} onNext={handleNext} onRetry={() => { setShowModal(false); stopAndReset(); }} onClose={() => { setShowModal(false); router.back(); }} />
     </SafeAreaView>
   );
@@ -486,5 +540,27 @@ const styles = StyleSheet.create({
     fontWeight: '800', 
     color: '#FFFFFF',
     letterSpacing: 0.3,
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    ...SHADOWS.card,
+    shadowColor: COLORS.primary,
+    shadowOpacity: 0.3,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
   },
 });
